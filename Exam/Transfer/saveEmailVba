@@ -9,7 +9,11 @@ Public Sub SaveAttachments()
     Dim emailCounter As Long
     Dim strFile As String
     Dim strFolderpath As String
+    Dim strTempFile As String
     Dim strDeletedFiles As String
+    Dim objWordApp As Word.Application
+    Dim objWordDoc As Word.Document
+    Set wrdApp = CreateObject("Word.Application")
     strFolderpath = CreateObject("WScript.Shell").SpecialFolders(16)
     Set objOL = CreateObject("Outlook.Application")
     Set objSelection = objOL.ActiveExplorer.Selection
@@ -22,8 +26,23 @@ Public Sub SaveAttachments()
         emailCounter = emailCounter + 1
         strFile = strFolderpath & emailCounter & "\"
         If Len(Dir(strFile)) = 0 Then MkDir strFile
-        strFile = strFile & "email.txt"
-        objMsg.SaveAs strFile, OlSaveAsType.olTXT
+        strTempFile = strFile & "temp.mht"
+        'Firstly, save the email as a mht file in the temporary folder
+    objMsg.SaveAs strTempFile, olMHTML
+ 
+    'Open the mht file in MS Word
+    Set objWordApp = CreateObject("Word.Application")
+    Set objWordDoc = objWordApp.Documents.Open(strTempFile, False)
+ 
+    'Change the local folder to save the PDF file
+    strPDF = strFile & "email.pdf"
+ 
+    'Export the current mht file as a PDF file
+    objWordApp.ActiveDocument.ExportAsFixedFormat strPDF, wdExportFormatPDF
+
+    objWordDoc.Close
+    objWordApp.Quit
+    
         If lngCount > 0 Then
             For i = lngCount To 1 Step -1
                 strFile = objAttachments.Item(i).FileName
